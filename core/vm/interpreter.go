@@ -22,9 +22,9 @@ import (
 	"sync/atomic"
 
 	"github.com/dterei/gotsc"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/syclops/go-ethereum/common"
+	"github.com/syclops/go-ethereum/common/math"
+	"github.com/syclops/go-ethereum/log"
 )
 
 // Config are the configuration options for the Interpreter

@@ -20,9 +20,9 @@ import (
 	"crypto/ecdsa"
 	"net"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/netutil"
+	"github.com/syclops/go-ethereum/log"
+	"github.com/syclops/go-ethereum/p2p/enode"
+	"github.com/syclops/go-ethereum/p2p/netutil"
 )
 
 type UDPConn interface {

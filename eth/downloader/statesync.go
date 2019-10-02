@@ -22,12 +22,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/trie"
+	"github.com/syclops/go-ethereum/common"
+	"github.com/syclops/go-ethereum/core/rawdb"
+	"github.com/syclops/go-ethereum/core/state"
+	"github.com/syclops/go-ethereum/ethdb"
+	"github.com/syclops/go-ethereum/log"
+	"github.com/syclops/go-ethereum/trie"
 	"golang.org/x/crypto/sha3"
 )
 

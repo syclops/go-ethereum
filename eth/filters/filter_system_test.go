@@ -25,17 +25,17 @@ import (
 	"testing"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/ethash"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/bloombits"
-	"github.com/ethereum/go-ethereum/core/rawdb"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rpc"
+	ethereum "github.com/syclops/go-ethereum"
+	"github.com/syclops/go-ethereum/common"
+	"github.com/syclops/go-ethereum/consensus/ethash"
+	"github.com/syclops/go-ethereum/core"
+	"github.com/syclops/go-ethereum/core/bloombits"
+	"github.com/syclops/go-ethereum/core/rawdb"
+	"github.com/syclops/go-ethereum/core/types"
+	"github.com/syclops/go-ethereum/ethdb"
+	"github.com/syclops/go-ethereum/event"
+	"github.com/syclops/go-ethereum/params"
+	"github.com/syclops/go-ethereum/rpc"
 )
 
 type testBackend struct {

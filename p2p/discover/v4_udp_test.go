@@ -32,13 +32,13 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/internal/testlog"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/syclops/go-ethereum/common"
+	"github.com/syclops/go-ethereum/crypto"
+	"github.com/syclops/go-ethereum/internal/testlog"
+	"github.com/syclops/go-ethereum/log"
+	"github.com/syclops/go-ethereum/p2p/enode"
+	"github.com/syclops/go-ethereum/p2p/enr"
+	"github.com/syclops/go-ethereum/rlp"
 )
 
 func init() {

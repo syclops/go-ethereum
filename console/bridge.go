@@ -23,10 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/scwallet"
-	"github.com/ethereum/go-ethereum/accounts/usbwallet"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/syclops/go-ethereum/accounts/scwallet"
+	"github.com/syclops/go-ethereum/accounts/usbwallet"
+	"github.com/syclops/go-ethereum/log"
+	"github.com/syclops/go-ethereum/rpc"
 	"github.com/robertkrimen/otto"
 )
 

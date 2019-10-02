@@ -23,8 +23,8 @@ import (
 	"io/ioutil"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/p2p/enode"
+	"github.com/syclops/go-ethereum/common"
+	"github.com/syclops/go-ethereum/p2p/enode"
 )
 
 const jsonIndent = "    "

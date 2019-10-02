@@ -26,17 +26,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/mclock"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth"
-	"github.com/ethereum/go-ethereum/les/flowcontrol"
-	"github.com/ethereum/go-ethereum/light"
-	"github.com/ethereum/go-ethereum/p2p"
-	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/syclops/go-ethereum/common"
+	"github.com/syclops/go-ethereum/common/mclock"
+	"github.com/syclops/go-ethereum/core"
+	"github.com/syclops/go-ethereum/core/types"
+	"github.com/syclops/go-ethereum/eth"
+	"github.com/syclops/go-ethereum/les/flowcontrol"
+	"github.com/syclops/go-ethereum/light"
+	"github.com/syclops/go-ethereum/p2p"
+	"github.com/syclops/go-ethereum/p2p/enode"
+	"github.com/syclops/go-ethereum/params"
+	"github.com/syclops/go-ethereum/rlp"
 )
 
 var (

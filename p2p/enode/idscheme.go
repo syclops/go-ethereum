@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/p2p/enr"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/syclops/go-ethereum/common/math"
+	"github.com/syclops/go-ethereum/crypto"
+	"github.com/syclops/go-ethereum/p2p/enr"
+	"github.com/syclops/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
 
