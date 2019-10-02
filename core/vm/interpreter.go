@@ -21,6 +21,7 @@ import (
 	"hash"
 	"sync/atomic"
 
+	"github.com/dterei/gotsc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/log"
@@ -266,8 +267,15 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			logged = true
 		}
 
+		// measure overhead of cycle counting and start timer
+		tscOverhead := gotsc.TSCOverhead()
+		start := gotsc.BenchStart()
 		// execute the operation
 		res, err = operation.execute(&pc, in, contract, mem, stack)
+		// stop timer, and display the number of cycles the operation took
+		end := gotsc.BenchEnd()
+		opCycles := end - start - tscOverhead
+		fmt.Println(op, opCycles)
 		// verifyPool is a build flag. Pool verification makes sure the integrity
 		// of the integer pool by comparing values to a default value.
 		if verifyPool {
