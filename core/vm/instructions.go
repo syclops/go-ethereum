@@ -18,6 +18,8 @@ package vm
 
 import (
 	"errors"
+	"fmt"
+	"github.com/dterei/gotsc"
 	"math/big"
 
 	"github.com/syclops/go-ethereum/common"
@@ -39,42 +41,64 @@ var (
 
 func opAdd(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	math.U256(y.Add(x, y))
 
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSub(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	math.U256(y.Sub(x, y))
 
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opMul(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(math.U256(x.Mul(x, y)))
 
 	interpreter.intPool.put(y)
 
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opDiv(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if y.Sign() != 0 {
 		math.U256(y.Div(x, y))
 	} else {
 		y.SetUint64(0)
 	}
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSdiv(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := math.S256(stack.pop()), math.S256(stack.pop())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	res := interpreter.intPool.getZero()
 
 	if y.Sign() == 0 || x.Sign() == 0 {
@@ -89,22 +113,32 @@ func opSdiv(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory 
 		stack.push(math.U256(res))
 	}
 	interpreter.intPool.put(x, y)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opMod(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if y.Sign() == 0 {
 		stack.push(x.SetUint64(0))
 	} else {
 		stack.push(math.U256(x.Mod(x, y)))
 	}
 	interpreter.intPool.put(y)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSmod(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := math.S256(stack.pop()), math.S256(stack.pop())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	res := interpreter.intPool.getZero()
 
 	if y.Sign() == 0 {
@@ -119,11 +153,16 @@ func opSmod(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory 
 		stack.push(math.U256(res))
 	}
 	interpreter.intPool.put(x, y)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opExp(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	base, exponent := stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	// some shortcuts
 	cmpToOne := exponent.Cmp(big1)
 	if cmpToOne < 0 { // Exponent is zero
@@ -140,11 +179,16 @@ func opExp(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
 		interpreter.intPool.put(base)
 	}
 	interpreter.intPool.put(exponent)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSignExtend(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	back := stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if back.Cmp(big.NewInt(31)) < 0 {
 		bit := uint(back.Uint64()*8 + 7)
 		num := stack.pop()
@@ -160,39 +204,59 @@ func opSignExtend(pc *uint64, interpreter *EVMInterpreter, contract *Contract, m
 	}
 
 	interpreter.intPool.put(back)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opNot(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x := stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	math.U256(x.Not(x))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opLt(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if x.Cmp(y) < 0 {
 		y.SetUint64(1)
 	} else {
 		y.SetUint64(0)
 	}
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opGt(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if x.Cmp(y) > 0 {
 		y.SetUint64(1)
 	} else {
 		y.SetUint64(0)
 	}
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSlt(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 
 	xSign := x.Cmp(tt255)
 	ySign := y.Cmp(tt255)
@@ -212,11 +276,16 @@ func opSlt(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
 		}
 	}
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSgt(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 
 	xSign := x.Cmp(tt255)
 	ySign := y.Cmp(tt255)
@@ -236,56 +305,86 @@ func opSgt(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
 		}
 	}
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opEq(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if x.Cmp(y) == 0 {
 		y.SetUint64(1)
 	} else {
 		y.SetUint64(0)
 	}
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opIszero(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x := stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if x.Sign() > 0 {
 		x.SetUint64(0)
 	} else {
 		x.SetUint64(1)
 	}
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opAnd(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(x.And(x, y))
 
 	interpreter.intPool.put(y)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opOr(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	y.Or(x, y)
 
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opXor(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	y.Xor(x, y)
 
 	interpreter.intPool.put(x)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opByte(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	th, val := stack.pop(), stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if th.Cmp(common.Big32) < 0 {
 		b := math.Byte(val, 32, int(th.Int64()))
 		val.SetUint64(uint64(b))
@@ -293,11 +392,16 @@ func opByte(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory 
 		val.SetUint64(0)
 	}
 	interpreter.intPool.put(th)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opAddmod(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y, z := stack.pop(), stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if z.Cmp(bigZero) > 0 {
 		x.Add(x, y)
 		x.Mod(x, z)
@@ -306,11 +410,16 @@ func opAddmod(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memor
 		stack.push(x.SetUint64(0))
 	}
 	interpreter.intPool.put(y, z)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opMulmod(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	x, y, z := stack.pop(), stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if z.Cmp(bigZero) > 0 {
 		x.Mul(x, y)
 		x.Mod(x, z)
@@ -319,6 +428,9 @@ func opMulmod(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memor
 		stack.push(x.SetUint64(0))
 	}
 	interpreter.intPool.put(y, z)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -328,15 +440,23 @@ func opMulmod(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memor
 func opSHL(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// Note, second operand is left in the stack; accumulate result into it, and no need to push it afterwards
 	shift, value := math.U256(stack.pop()), math.U256(stack.peek())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	defer interpreter.intPool.put(shift) // First operand back into the pool
 
 	if shift.Cmp(common.Big256) >= 0 {
 		value.SetUint64(0)
+		end := gotsc.BenchEnd()
+		opCycles := end - start - tscOverhead
+		fmt.Println(contract.GetOp(*pc), opCycles)
 		return nil, nil
 	}
 	n := uint(shift.Uint64())
 	math.U256(value.Lsh(value, n))
 
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -346,15 +466,23 @@ func opSHL(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
 func opSHR(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// Note, second operand is left in the stack; accumulate result into it, and no need to push it afterwards
 	shift, value := math.U256(stack.pop()), math.U256(stack.peek())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	defer interpreter.intPool.put(shift) // First operand back into the pool
 
 	if shift.Cmp(common.Big256) >= 0 {
 		value.SetUint64(0)
+		end := gotsc.BenchEnd()
+		opCycles := end - start - tscOverhead
+		fmt.Println(contract.GetOp(*pc), opCycles)
 		return nil, nil
 	}
 	n := uint(shift.Uint64())
 	math.U256(value.Rsh(value, n))
 
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -364,6 +492,8 @@ func opSHR(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
 func opSAR(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// Note, S256 returns (potentially) a new bigint, so we're popping, not peeking this one
 	shift, value := math.U256(stack.pop()), math.S256(stack.pop())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	defer interpreter.intPool.put(shift) // First operand back into the pool
 
 	if shift.Cmp(common.Big256) >= 0 {
@@ -373,17 +503,26 @@ func opSAR(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
 			value.SetInt64(-1)
 		}
 		stack.push(math.U256(value))
+		end := gotsc.BenchEnd()
+		opCycles := end - start - tscOverhead
+		fmt.Println(contract.GetOp(*pc), opCycles)
 		return nil, nil
 	}
 	n := uint(shift.Uint64())
 	value.Rsh(value, n)
 	stack.push(math.U256(value))
 
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSha3(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	offset, size := stack.pop(), stack.pop()
+	// Note: we start measuring here, but we may want to move this after the memory load.
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	data := memory.Get(offset.Int64(), size.Int64())
 
 	if interpreter.hasher == nil {
@@ -401,42 +540,80 @@ func opSha3(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory 
 	stack.push(interpreter.intPool.get().SetBytes(interpreter.hasherBuf[:]))
 
 	interpreter.intPool.put(offset, size)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opAddress(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetBytes(contract.Address().Bytes()))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opBalance(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	slot := stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	slot.Set(interpreter.evm.StateDB.GetBalance(common.BigToAddress(slot)))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opOrigin(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetBytes(interpreter.evm.Origin.Bytes()))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opCaller(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetBytes(contract.Caller().Bytes()))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opCallValue(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().Set(contract.value))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opCallDataLoad(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetBytes(getDataBig(contract.Input, stack.pop(), big32)))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opCallDataSize(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetInt64(int64(len(contract.Input))))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -446,14 +623,24 @@ func opCallDataCopy(pc *uint64, interpreter *EVMInterpreter, contract *Contract,
 		dataOffset = stack.pop()
 		length     = stack.pop()
 	)
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	memory.Set(memOffset.Uint64(), length.Uint64(), getDataBig(contract.Input, dataOffset, length))
 
 	interpreter.intPool.put(memOffset, dataOffset, length)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opReturnDataSize(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetUint64(uint64(len(interpreter.returnData))))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -462,30 +649,47 @@ func opReturnDataCopy(pc *uint64, interpreter *EVMInterpreter, contract *Contrac
 		memOffset  = stack.pop()
 		dataOffset = stack.pop()
 		length     = stack.pop()
-
-		end = interpreter.intPool.get().Add(dataOffset, length)
 	)
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
+	end := interpreter.intPool.get().Add(dataOffset, length)
 	defer interpreter.intPool.put(memOffset, dataOffset, length, end)
 
 	if !end.IsUint64() || uint64(len(interpreter.returnData)) < end.Uint64() {
+		benchEnd := gotsc.BenchEnd()
+		opCycles := benchEnd - start - tscOverhead
+		fmt.Println(contract.GetOp(*pc), opCycles)
 		return nil, errReturnDataOutOfBounds
 	}
 	memory.Set(memOffset.Uint64(), length.Uint64(), interpreter.returnData[dataOffset.Uint64():end.Uint64()])
 
+	benchEnd := gotsc.BenchEnd()
+	opCycles := benchEnd - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opExtCodeSize(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	slot := stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	slot.SetUint64(uint64(interpreter.evm.StateDB.GetCodeSize(common.BigToAddress(slot))))
 
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opCodeSize(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	l := interpreter.intPool.get().SetInt64(int64(len(contract.Code)))
 	stack.push(l)
 
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -495,10 +699,15 @@ func opCodeCopy(pc *uint64, interpreter *EVMInterpreter, contract *Contract, mem
 		codeOffset = stack.pop()
 		length     = stack.pop()
 	)
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	codeCopy := getDataBig(contract.Code, codeOffset, length)
 	memory.Set(memOffset.Uint64(), length.Uint64(), codeCopy)
 
 	interpreter.intPool.put(memOffset, codeOffset, length)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -509,10 +718,15 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, contract *Contract, 
 		codeOffset = stack.pop()
 		length     = stack.pop()
 	)
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	codeCopy := getDataBig(interpreter.evm.StateDB.GetCode(addr), codeOffset, length)
 	memory.Set(memOffset.Uint64(), length.Uint64(), codeCopy)
 
 	interpreter.intPool.put(memOffset, codeOffset, length)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -544,22 +758,34 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, contract *Contract, 
 // this account should be regarded as a non-existent account and zero should be returned.
 func opExtCodeHash(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	slot := stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	address := common.BigToAddress(slot)
 	if interpreter.evm.StateDB.Empty(address) {
 		slot.SetUint64(0)
 	} else {
 		slot.SetBytes(interpreter.evm.StateDB.GetCodeHash(address).Bytes())
 	}
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opGasprice(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().Set(interpreter.evm.GasPrice))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opBlockhash(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	num := stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 
 	n := interpreter.intPool.get().Sub(interpreter.evm.BlockNumber, common.Big257)
 	if num.Cmp(n) > 0 && num.Cmp(interpreter.evm.BlockNumber) < 0 {
@@ -568,95 +794,166 @@ func opBlockhash(pc *uint64, interpreter *EVMInterpreter, contract *Contract, me
 		stack.push(interpreter.intPool.getZero())
 	}
 	interpreter.intPool.put(num, n)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opCoinbase(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetBytes(interpreter.evm.Coinbase.Bytes()))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opTimestamp(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(math.U256(interpreter.intPool.get().Set(interpreter.evm.Time)))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opNumber(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(math.U256(interpreter.intPool.get().Set(interpreter.evm.BlockNumber)))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opDifficulty(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(math.U256(interpreter.intPool.get().Set(interpreter.evm.Difficulty)))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opGasLimit(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(math.U256(interpreter.intPool.get().SetUint64(interpreter.evm.GasLimit)))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opPop(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	interpreter.intPool.put(stack.pop())
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opMload(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	offset := stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	val := interpreter.intPool.get().SetBytes(memory.Get(offset.Int64(), 32))
 	stack.push(val)
 
 	interpreter.intPool.put(offset)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opMstore(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// pop value of the stack
 	mStart, val := stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	memory.Set32(mStart.Uint64(), val)
 
 	interpreter.intPool.put(mStart, val)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opMstore8(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	off, val := stack.pop().Int64(), stack.pop().Int64()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	memory.store[off] = byte(val & 0xff)
 
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSload(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	loc := stack.peek()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	val := interpreter.evm.StateDB.GetState(contract.Address(), common.BigToHash(loc))
 	loc.SetBytes(val.Bytes())
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSstore(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	loc := common.BigToHash(stack.pop())
 	val := stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	interpreter.evm.StateDB.SetState(contract.Address(), loc, common.BigToHash(val))
 
 	interpreter.intPool.put(val)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opJump(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	pos := stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if !contract.validJumpdest(pos) {
+		end := gotsc.BenchEnd()
+		opCycles := end - start - tscOverhead
+		fmt.Println(contract.GetOp(*pc), opCycles)
 		return nil, errInvalidJump
 	}
 	*pc = pos.Uint64()
 
 	interpreter.intPool.put(pos)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opJumpi(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	pos, cond := stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	if cond.Sign() != 0 {
 		if !contract.validJumpdest(pos) {
+			end := gotsc.BenchEnd()
+			opCycles := end - start - tscOverhead
+			fmt.Println(contract.GetOp(*pc), opCycles)
 			return nil, errInvalidJump
 		}
 		*pc = pos.Uint64()
@@ -665,25 +962,48 @@ func opJumpi(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory
 	}
 
 	interpreter.intPool.put(pos, cond)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opJumpdest(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opPc(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetUint64(*pc))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opMsize(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetInt64(int64(memory.Len())))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opGas(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	stack.push(interpreter.intPool.get().SetUint64(contract.Gas))
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -691,6 +1011,10 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memor
 	var (
 		value        = stack.pop()
 		offset, size = stack.pop(), stack.pop()
+	)
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
+	var (
 		input        = memory.Get(offset.Int64(), size.Int64())
 		gas          = contract.Gas
 	)
@@ -715,8 +1039,14 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memor
 	interpreter.intPool.put(value, offset, size)
 
 	if suberr == errExecutionReverted {
+		end := gotsc.BenchEnd()
+		opCycles := end - start - tscOverhead
+		fmt.Println(contract.GetOp(*pc), opCycles)
 		return res, nil
 	}
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -725,6 +1055,10 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memo
 		endowment    = stack.pop()
 		offset, size = stack.pop(), stack.pop()
 		salt         = stack.pop()
+	)
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
+	var (
 		input        = memory.Get(offset.Int64(), size.Int64())
 		gas          = contract.Gas
 	)
@@ -743,14 +1077,22 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memo
 	interpreter.intPool.put(endowment, offset, size, salt)
 
 	if suberr == errExecutionReverted {
+		end := gotsc.BenchEnd()
+		opCycles := end - start - tscOverhead
+		fmt.Println(contract.GetOp(*pc), opCycles)
 		return res, nil
 	}
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// Pop gas. The actual gas in interpreter.evm.callGasTemp.
 	interpreter.intPool.put(stack.pop())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	gas := interpreter.evm.callGasTemp
 	// Pop other call parameters.
 	addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
@@ -774,12 +1116,17 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory 
 	contract.Gas += returnGas
 
 	interpreter.intPool.put(addr, value, inOffset, inSize, retOffset, retSize)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return ret, nil
 }
 
 func opCallCode(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// Pop gas. The actual gas is in interpreter.evm.callGasTemp.
 	interpreter.intPool.put(stack.pop())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	gas := interpreter.evm.callGasTemp
 	// Pop other call parameters.
 	addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
@@ -803,12 +1150,17 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, contract *Contract, mem
 	contract.Gas += returnGas
 
 	interpreter.intPool.put(addr, value, inOffset, inSize, retOffset, retSize)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return ret, nil
 }
 
 func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// Pop gas. The actual gas is in interpreter.evm.callGasTemp.
 	interpreter.intPool.put(stack.pop())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	gas := interpreter.evm.callGasTemp
 	// Pop other call parameters.
 	addr, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
@@ -828,12 +1180,17 @@ func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract,
 	contract.Gas += returnGas
 
 	interpreter.intPool.put(addr, inOffset, inSize, retOffset, retSize)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return ret, nil
 }
 
 func opStaticCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	// Pop gas. The actual gas is in interpreter.evm.callGasTemp.
 	interpreter.intPool.put(stack.pop())
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	gas := interpreter.evm.callGasTemp
 	// Pop other call parameters.
 	addr, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
@@ -853,34 +1210,57 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, m
 	contract.Gas += returnGas
 
 	interpreter.intPool.put(addr, inOffset, inSize, retOffset, retSize)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return ret, nil
 }
 
 func opReturn(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	offset, size := stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	ret := memory.GetPtr(offset.Int64(), size.Int64())
 
 	interpreter.intPool.put(offset, size)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return ret, nil
 }
 
 func opRevert(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	offset, size := stack.pop(), stack.pop()
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	ret := memory.GetPtr(offset.Int64(), size.Int64())
 
 	interpreter.intPool.put(offset, size)
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return ret, nil
 }
 
 func opStop(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
 func opSuicide(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	balance := interpreter.evm.StateDB.GetBalance(contract.Address())
 	interpreter.evm.StateDB.AddBalance(common.BigToAddress(stack.pop()), balance)
 
 	interpreter.evm.StateDB.Suicide(contract.Address())
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
@@ -912,6 +1292,8 @@ func makeLog(size int) executionFunc {
 
 // opPush1 is a specialized version of pushN
 func opPush1(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	tscOverhead := gotsc.TSCOverhead()
+	start := gotsc.BenchStart()
 	var (
 		codeLen = uint64(len(contract.Code))
 		integer = interpreter.intPool.get()
@@ -922,6 +1304,9 @@ func opPush1(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory
 	} else {
 		stack.push(integer.SetUint64(0))
 	}
+	end := gotsc.BenchEnd()
+	opCycles := end - start - tscOverhead
+	fmt.Println(contract.GetOp(*pc), opCycles)
 	return nil, nil
 }
 
